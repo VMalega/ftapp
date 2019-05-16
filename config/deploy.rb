@@ -1,8 +1,51 @@
 # config valid for current version and patch releases of Capistrano
 lock "~> 3.11.0"
 
-set :application, "my_app_name"
-set :repo_url, "git@example.com:me/my_repo.git"
+set :application, "fieldwatch"
+set :repo_url, "git@github.com:VMalega/ftapp.git"
+set :chruby_ruby, 'ruby-2.6.0'
+
+set :stage_rails_env, -> { fetch(:rails_env) }
+set :linked_files, -> { ["config/database.yml"] }
+
+set :puma_threads,    [4, 16]
+set :puma_workers,    0
+append :linked_dirs, 'log', 'tmp/pids', 'tmp/cache', 'tmp/sockets', 'tmp/pdfs', 'public/system'
+set :puma_role, :app
+set :puma_user, fetch(:user)
+set :puma_conf, -> { File.join(shared_path, 'puma.rb') }
+
+namespace :puma do
+  namespace :monit do
+    %w[monitor unmonitor].each do |command|
+      desc "monit #{command} puma"
+      task "#{command}" do
+        on roles(:app) do
+          execute :sudo, :monit, command, :puma
+        end
+      end
+    end
+  end
+  %w[stop start restart reload].each do |command|
+    desc "#{command} puma"
+    task "#{command}" do
+      on roles(:app) do
+        execute :sudo, :systemctl, command, :puma
+      end
+    end
+  end
+end
+namespace :yarn do
+  desc 'yarn install'
+  task :install do
+    on roles(:app) do
+      execute "cd #{release_path} && /usr/bin/yarn install --no-progress --production"
+    end
+  end
+end
+
+before 'deploy:assets:precompile', 'yarn:install'
+after 'deploy:published', 'puma:reload'
 
 # Default branch is :master
 # ask :branch, `git rev-parse --abbrev-ref HEAD`.chomp

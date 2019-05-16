@@ -50,11 +50,11 @@ group :development do
   gem 'spring-watcher-listen', '~> 2.0.0'
 
   gem "capistrano", "~> 3.11", require: false
-  gem "capistrano-bundle"
-  gem "capistrano-chruby"
-  gem "capistrano-rails"
+  gem "capistrano-bundle", require: false
+  gem "capistrano-chruby", require: false
+  gem "capistrano-rails", require: false
+  gem 'capistrano3-puma',   require: false
 end
-
 group :test do
   # Adds support for Capybara system testing and selenium driver
   gem 'capybara', '>= 2.15'
